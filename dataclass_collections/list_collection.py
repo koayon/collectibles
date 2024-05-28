@@ -1,6 +1,7 @@
 from dataclasses import fields, is_dataclass
 from typing import Any, Generic, Optional, Type, TypeVar
 
+from pydantic import BaseModel
 from typeguard import check_type
 
 T = TypeVar("T")
@@ -28,12 +29,18 @@ This collection is of type {self.underlying_type}, but there's an element of typ
 
     def _add_properties(self):
         cls = self.__class__
-        dataclass_type = self.__orig_bases__[0].__args__[0]  # type: ignore
-        # TODO: ^Can we switch this with self.underlying_type?
-        for field in fields(dataclass_type):
-            name = field.name
-            property_type = list[field.type]
-            setattr(cls, name, self._make_property(name, property_type))
+        if is_dataclass(self.underlying_type):
+            dataclass_type = self.__orig_bases__[0].__args__[0]  # type: ignore
+            for field in fields(dataclass_type):
+                name = field.name
+                property_type = list[field.type]
+                setattr(cls, name, self._make_property(name, property_type))
+        elif isinstance(self.underlying_type, BaseModel):
+            raise NotImplementedError("Pydantic models are not supported yet")
+        elif self.underlying_type is None:
+            pass
+        else:
+            raise TypeError(f"""The ListCollection must be of dataclasses""")
 
     def _make_property(self, name: str, typ: type):
         def prop(self):
