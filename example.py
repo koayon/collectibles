@@ -34,7 +34,7 @@ except TypeError as e:
 dataclasses = [Dataclass(1, "a"), Dataclass(2, "b"), Dataclass(3, "c")]
 collection = DataclassCollection(dataclasses)
 
-a = collection[0]
+element = collection[0]
 
 # Accessing properties
 print(collection.val1)  # Output: [1, 2, 3]
@@ -43,3 +43,13 @@ print(collection.val3)
 
 collection.append(Dataclass(4, "d"))
 print(collection.val1)  # Output: [1, 2, 3, 4]
+
+collection2 = DataclassCollection(dataclasses)
+
+new_collection = collection + collection2
+print(collection)
+b = collection[1:2]
+
+# I'm not going to stop you slicing or multiplying etc. but in those cases the
+# types are definitely the same so no checks needed
+# The result will be a list[Dataclass] so just wrap it in your DataclassCollection class and be on your way
