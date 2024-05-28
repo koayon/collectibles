@@ -12,22 +12,27 @@ class ListCollection(list[T], Generic[T]):
         self.underlying_type: Optional[Type] = None
         if args:
             self.underlying_type = type(args[0])
-            assert is_dataclass(
-                self.underlying_type
-            ), "The ListCollection must be of dataclasses"
-
-            for item in args:
-                if not isinstance(item, self.underlying_type):
-                    raise TypeError(
-                        f"""All elements in the ListCollection must be instances of the same type.
-This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
-                    )
-            check_type("args", args, Sequence[self.underlying_type])
+            if is_dataclass(self.underlying_type):
+                for item in args:
+                    if not isinstance(item, self.underlying_type):
+                        raise TypeError(
+                            f"""All elements in the ListCollection must be instances of the same type.
+    This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
+                        )
+                check_type("args", args, Sequence[self.underlying_type])
+            elif isinstance(self.underlying_type, BaseModel):
+                raise NotImplementedError("Pydantic models are not supported yet")
+            else:
+                raise TypeError(
+                    f"""The ListCollection must be of dataclasses or Pydantic models."""
+                )
 
         super().__init__(args)
         self._add_properties()
 
-    def _add_properties(self):
+    ### ADD PROPERTIES ###
+
+    def _add_properties(self) -> None:
         cls = self.__class__
         if is_dataclass(self.underlying_type):
             dataclass_type = self.__orig_bases__[0].__args__[0]  # type: ignore
@@ -42,14 +47,16 @@ This collection is of type {self.underlying_type}, but there's an element of typ
         else:
             raise TypeError(f"""The ListCollection must be of dataclasses""")
 
-    def _make_property(self, name: str, typ: type):
-        def prop(self):
+    def _make_property(self, name: str, property_type: type) -> property:
+        def prop(self) -> list[property_type]:
             # Intuitively [item.name for item in self]
             # But the following is a little nicer
             return [getattr(item, name) for item in self]
 
         prop.__name__ = name
         return property(prop)
+
+    ### ENABLE TYPE-CHECKED LIST OPS ###
 
     def append(self, object: T) -> None:
         self.underlying_type = self.underlying_type or type(object)
