@@ -6,6 +6,10 @@ authors = ["Kola Ayonrinde <koayon@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
+packages = [
+    { include = "dataclass_collections" },
+]
+
 [tool.poetry.dependencies]
 python = "^3.10"
 pydantic = "^2.7.1"

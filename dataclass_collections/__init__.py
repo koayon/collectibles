@@ -1,1 +1,1 @@
-from list_collection import ListCollection
+from .list_collection import ListCollection
