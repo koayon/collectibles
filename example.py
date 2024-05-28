@@ -48,8 +48,12 @@ collection2 = DataclassCollection(dataclasses)
 
 new_collection = collection + collection2
 print(collection)
-b = collection[1:2]
+print(new_collection)
+b = collection[1:3]
+print(b)
 
 # I'm not going to stop you slicing or multiplying etc. but in those cases the
 # types are definitely the same so no checks needed
 # The result will be a list[Dataclass] so just wrap it in your DataclassCollection class and be on your way
+print()
+print(collection * 2)
