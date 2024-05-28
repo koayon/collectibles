@@ -38,8 +38,8 @@ class ListCollection(list[T], Generic[T]):
             dataclass_type = self.__orig_bases__[0].__args__[0]  # type: ignore
             for field in fields(dataclass_type):
                 name = field.name
-                property_type = list[field.type]
-                setattr(cls, name, self._make_property(name, property_type))
+                field_type = field.type
+                setattr(cls, name, self._make_property(name, field_type))
         elif isinstance(self.underlying_type, BaseModel):
             raise NotImplementedError("Pydantic models are not supported yet")
         elif self.underlying_type is None:
@@ -47,8 +47,8 @@ class ListCollection(list[T], Generic[T]):
         else:
             raise TypeError(f"""The ListCollection must be of dataclasses""")
 
-    def _make_property(self, name: str, property_type: type) -> property:
-        def prop(self) -> list[property_type]:
+    def _make_property(self, name: str, field_type: type) -> property:
+        def prop(self) -> list[field_type]:
             # Intuitively [item.name for item in self]
             # But the following is a little nicer
             return [getattr(item, name) for item in self]
