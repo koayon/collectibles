@@ -19,7 +19,7 @@ class ListCollection(list[T], Generic[T]):
                 if not isinstance(item, self.underlying_type):
                     raise TypeError(
                         f"""All elements in the ListCollection must be instances of the same type.
-Here, the first element is of type {self.underlying_type}, but there's an element of type {type(item)}"""
+This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
                     )
             check_type("args", args, list[self.underlying_type])
 
@@ -51,5 +51,14 @@ Here, the first element is of type {self.underlying_type}, but there's an elemen
         else:
             raise TypeError(
                 f"""All elements in the ListCollection must be instances of the same type.
-Here, the first element is of type {self.underlying_type} and an object of type {type(object)} is being appended."""
+This collection is of type {self.underlying_type} and an object of type {type(object)} is being appended."""
             )
+
+    def __setitem__(self, key: int, value: T) -> None:
+        self.underlying_type = self.underlying_type or type(value)
+        if not isinstance(value, self.underlying_type):
+            raise TypeError(
+                f"""All elements in the ListCollection must be instances of the same type.
+This collection is of type {self.underlying_type} and an object of type {type(value)} is being assigned."""
+            )
+        super().__setitem__(key, value)
