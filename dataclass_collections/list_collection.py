@@ -1,5 +1,5 @@
 from dataclasses import fields, is_dataclass
-from typing import Any, Generic, Optional, Type, TypeVar
+from typing import Generic, Optional, Sequence, Type, TypeVar, Union
 
 from pydantic import BaseModel
 from typeguard import check_type
@@ -8,7 +8,7 @@ T = TypeVar("T")
 
 
 class ListCollection(list[T], Generic[T]):
-    def __init__(self, args: list[T]):
+    def __init__(self, args: Sequence[T]):
         self.underlying_type: Optional[Type] = None
         if args:
             self.underlying_type = type(args[0])
@@ -22,7 +22,7 @@ class ListCollection(list[T], Generic[T]):
                         f"""All elements in the ListCollection must be instances of the same type.
 This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
                     )
-            check_type("args", args, list[self.underlying_type])
+            check_type("args", args, Sequence[self.underlying_type])
 
         super().__init__(args)
         self._add_properties()
@@ -60,12 +60,42 @@ This collection is of type {self.underlying_type}, but there's an element of typ
                 f"""All elements in the ListCollection must be instances of the same type.
 This collection is of type {self.underlying_type} and an object of type {type(object)} is being appended."""
             )
+        # Note that extend uses append under the hood so this covers that case.
 
     def __setitem__(self, key: int, value: T) -> None:
         self.underlying_type = self.underlying_type or type(value)
-        if not isinstance(value, self.underlying_type):
+        if isinstance(value, self.underlying_type):
+            super().__setitem__(key, value)
+        else:
             raise TypeError(
                 f"""All elements in the ListCollection must be instances of the same type.
 This collection is of type {self.underlying_type} and an object of type {type(value)} is being assigned."""
             )
-        super().__setitem__(key, value)
+        # Note that insert uses __setitem__ under the hood so this covers that case.
+
+    def __add__(self, other: Union["ListCollection[T]", list[T]]) -> "ListCollection[T]":
+        if len(self) == 0:
+            return ListCollection(other)
+
+        elif isinstance(other, ListCollection):
+            return self._add_list_collections(other)
+
+        elif isinstance(other, list):
+            assert self.underlying_type is not None
+            other_list_collection = ListCollection(other)
+            return self._add_list_collections(other_list_collection)
+
+        else:
+            raise TypeError(
+                f"""The ListCollection can only be added to another ListCollection."""
+            )
+
+    def _add_list_collections(self, other: "ListCollection[T]") -> "ListCollection[T]":
+        if self.underlying_type == other.underlying_type:
+            out = ListCollection(super().__add__(other))
+            return out
+        else:
+            raise TypeError(
+                f"""Both ListCollections must be of the same type to be added together.
+This collection is of type {self.underlying_type} and the other collection is of type {other.underlying_type}"""
+            )
