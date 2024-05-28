@@ -2,7 +2,6 @@ from dataclasses import fields, is_dataclass
 from typing import Generic, Optional, Sequence, Type, TypeVar, Union
 
 from pydantic import BaseModel
-from typeguard import check_type
 
 T = TypeVar("T")
 
@@ -19,7 +18,6 @@ class ListCollection(list[T], Generic[T]):
                             f"""All elements in the ListCollection must be instances of the same type.
     This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
                         )
-                check_type("args", args, Sequence[self.underlying_type])
             elif isinstance(self.underlying_type, BaseModel):
                 raise NotImplementedError("Pydantic models are not supported yet")
             else:
@@ -80,9 +78,17 @@ This collection is of type {self.underlying_type} and an object of type {type(va
             )
         # Note that insert uses __setitem__ under the hood so this covers that case.
 
-    def __add__(self, other: Union["ListCollection[T]", list[T]]) -> "ListCollection[T]":
+    def __add__(self, other: list[T]) -> "ListCollection[T]":
         if len(self) == 0:
-            return ListCollection(other)
+            if isinstance(other, type(self)):
+                return other
+            elif isinstance(other, list):
+                self_type = type(self)
+                return self_type(other)
+            else:
+                raise TypeError(
+                    f"""The ListCollection can only be added to another ListCollection or a list."""
+                )
 
         elif isinstance(other, ListCollection):
             return self._add_list_collections(other)
@@ -99,10 +105,16 @@ This collection is of type {self.underlying_type} and an object of type {type(va
 
     def _add_list_collections(self, other: "ListCollection[T]") -> "ListCollection[T]":
         if self.underlying_type == other.underlying_type:
-            out = ListCollection(super().__add__(other))
+            concatted_collections = super().__add__(other)
+
+            self_type = type(self)
+            out = self_type(concatted_collections)
             return out
         else:
             raise TypeError(
                 f"""Both ListCollections must be of the same type to be added together.
 This collection is of type {self.underlying_type} and the other collection is of type {other.underlying_type}"""
             )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({super().__str__()})"
