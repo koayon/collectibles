@@ -1,5 +1,5 @@
-from dataclasses import fields
-from typing import Generic, TypeVar
+from dataclasses import fields, is_dataclass
+from typing import Any, Generic, Optional, Type, TypeVar
 
 from typeguard import check_type
 
@@ -8,8 +8,12 @@ T = TypeVar("T")
 
 class ListCollection(list[T], Generic[T]):
     def __init__(self, args: list[T]):
+        self.underlying_type: Optional[Type] = None
         if args:
             self.underlying_type = type(args[0])
+            assert is_dataclass(
+                self.underlying_type
+            ), "The ListCollection must be of dataclasses"
 
             for item in args:
                 if not isinstance(item, self.underlying_type):
