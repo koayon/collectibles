@@ -43,3 +43,13 @@ Here, the first element is of type {self.underlying_type}, but there's an elemen
 
         prop.__name__ = name
         return property(prop)
+
+    def append(self, object: T) -> None:
+        self.underlying_type = self.underlying_type or type(object)
+        if isinstance(object, self.underlying_type):
+            super().append(object)
+        else:
+            raise TypeError(
+                f"""All elements in the ListCollection must be instances of the same type.
+Here, the first element is of type {self.underlying_type} and an object of type {type(object)} is being appended."""
+            )
