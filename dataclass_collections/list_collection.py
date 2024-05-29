@@ -1,5 +1,5 @@
 from dataclasses import fields, is_dataclass
-from typing import Generic, Optional, Sequence, Type, TypeVar, Union
+from typing import Generic, Optional, Self, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -78,7 +78,7 @@ This collection is of type {self.underlying_type} and an object of type {type(va
             )
         # Note that insert uses __setitem__ under the hood so this covers that case.
 
-    def __add__(self, other: list[T]) -> "ListCollection[T]":
+    def __add__(self, other: list[T]) -> Self:
         if len(self) == 0:
             if isinstance(other, type(self)):
                 return other
@@ -103,7 +103,7 @@ This collection is of type {self.underlying_type} and an object of type {type(va
                 f"""The ListCollection can only be added to another ListCollection."""
             )
 
-    def _add_list_collections(self, other: "ListCollection[T]") -> "ListCollection[T]":
+    def _add_list_collections(self, other: "ListCollection[T]") -> Self:
         if self.underlying_type == other.underlying_type:
             concatted_collections = super().__add__(other)
 
