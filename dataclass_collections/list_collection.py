@@ -1,4 +1,9 @@
-from dataclasses import fields, is_dataclass
+import abc
+import copy
+import inspect
+import keyword
+import sys
+from dataclasses import MISSING, Field, fields, is_dataclass
 from typing import Generic, Optional, Self, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
@@ -7,17 +12,12 @@ T = TypeVar("T")
 
 
 class ListCollection(list[T], Generic[T]):
-    def __init__(self, args: Sequence[T]):
+    def __init__(self, items: Sequence[T]):
         self.underlying_type: Optional[Type] = None
-        if args:
-            self.underlying_type = type(args[0])
+        if items:
+            self.underlying_type = type(items[0])
             if is_dataclass(self.underlying_type):
-                for item in args:
-                    if not isinstance(item, self.underlying_type):
-                        raise TypeError(
-                            f"""All elements in the ListCollection must be instances of the same type.
-    This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
-                        )
+                self._check_consistent_types_for_dataclass_list(items)
             elif isinstance(self.underlying_type, BaseModel):
                 raise NotImplementedError("Pydantic models are not supported yet")
             else:
@@ -25,8 +25,20 @@ class ListCollection(list[T], Generic[T]):
                     f"""The ListCollection must be of dataclasses or Pydantic models."""
                 )
 
-        super().__init__(args)
+        super().__init__(items)
         self._add_properties()
+
+    def _check_consistent_types_for_dataclass_list(self, items):
+        self.underlying_type = type(items[0])
+        for item in items:
+            if not isinstance(item, self.underlying_type):
+                raise TypeError(
+                    f"""All elements in the ListCollection must be instances of the same type.
+    This collection is of type {self.underlying_type}, but there's an element of type {type(item)}"""
+                )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({super().__str__()})"
 
     ### ADD PROPERTIES ###
 
@@ -34,10 +46,17 @@ class ListCollection(list[T], Generic[T]):
         cls = self.__class__
         if is_dataclass(self.underlying_type):
             dataclass_type = self.__orig_bases__[0].__args__[0]  # type: ignore
-            for field in fields(dataclass_type):
+
+            for field in fields(self.underlying_type):
+                # for field in fields(dataclass_type):
+
                 name = field.name
                 field_type = field.type
-                setattr(cls, name, self._make_property(name, field_type))
+                property_type = list[field_type]
+                setattr(cls, name, self._make_property(name, field_type, property_type))
+
+            setattr(cls, "_ATTRS", [field.name for field in fields(dataclass_type)])
+
         elif isinstance(self.underlying_type, BaseModel):
             raise NotImplementedError("Pydantic models are not supported yet")
         elif self.underlying_type is None:
@@ -45,13 +64,14 @@ class ListCollection(list[T], Generic[T]):
         else:
             raise TypeError(f"""The ListCollection must be of dataclasses""")
 
-    def _make_property(self, name: str, field_type: type) -> property:
+    def _make_property(self, name: str, field_type: type, property_type: type) -> property:
         def prop(self) -> list[field_type]:
             # Intuitively [item.name for item in self]
             # But the following is a little nicer
             return [getattr(item, name) for item in self]
 
         prop.__name__ = name
+        prop.__annotations__ = {"return": property_type}
         return property(prop)
 
     ### ENABLE TYPE-CHECKED LIST OPS ###
@@ -115,6 +135,3 @@ This collection is of type {self.underlying_type} and an object of type {type(va
                 f"""Both ListCollections must be of the same type to be added together.
 This collection is of type {self.underlying_type} and the other collection is of type {other.underlying_type}"""
             )
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}({super().__str__()})"
