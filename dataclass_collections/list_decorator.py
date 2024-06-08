@@ -1,15 +1,18 @@
-import dataclasses
 from dataclasses import fields, is_dataclass
-from typing import Sequence, Type, get_type_hints
+from typing import Any, Callable, Sequence, Type, TypeVar, get_type_hints
 
 from pydantic import BaseModel
 
 from dataclass_collections.list_collection import ListCollection
 
+T = TypeVar("T")
+
 
 # Define the decorator
-def list_collection(base_dataclass: Type):
-    def decorator(cls):
+def list_collection(
+    base_dataclass: Type[T],
+) -> Callable[[Type[Any]], Type[ListCollection[T]]]:
+    def decorator(cls: Type[Any]) -> Type[ListCollection[T]]:
         base_annotations = get_type_hints(base_dataclass)
 
         # Define a new class that inherits from ListCollection and the user-defined class
@@ -20,6 +23,11 @@ def list_collection(base_dataclass: Type):
                 self.underlying_type = base_dataclass
                 self._add_properties()
 
+        # Transfer attributes and methods from the original class to the new class
+        for name, value in vars(cls).items():
+            if not name.startswith("__"):
+                setattr(ListCollectionSubClass, name, value)
+
         # Transfer annotations for better type checking and editor support
         if is_dataclass(base_dataclass):
             # _fields = dataclasses.fields(base_dataclass)
@@ -29,19 +37,15 @@ def list_collection(base_dataclass: Type):
         elif isinstance(base_dataclass, BaseModel):
             raise NotImplementedError("Pydantic models are not supported yet")
         else:
-            raise TypeError(
-                f"""The ListCollection must be of dataclasses or Pydantic models."""
-            )
+            raise TypeError("The ListCollection must be of dataclasses or Pydantic models.")
 
-        combined_annotations = {**base_annotations, **cls_annotations}
-
-        # Transfer annotations for better type checking and editor support
+        # Ensure list types for collection fields
         for field in fields(base_dataclass):
-            # Ensure list types for collection fields
-            combined_annotations[field.name] = list[
-                getattr(base_dataclass, field.type.__name__, field.type)
-            ]
+            field_type = getattr(base_dataclass, field.type.__name__, field.type)
+            cls_annotations[field.name] = list[field_type]
 
+        # Combine annotations from base_dataclass and cls
+        combined_annotations = {**base_annotations, **cls_annotations}
         setattr(ListCollectionSubClass, "__annotations__", combined_annotations)
 
         # Copy docstring and other attributes if needed
