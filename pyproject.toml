@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dataclass-collections"
-version = "0.1.0"
+version = "0.1.1"
 description = "A library to manage collections of dataclasses and pydantic models"
 authors = ["Kola Ayonrinde <koayon@gmail.com>"]
 license = "MIT"
@@ -11,7 +11,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.9"
 pydantic = "^2.7.1"
 typeguard = "^4.3.0"
 

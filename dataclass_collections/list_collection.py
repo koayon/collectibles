@@ -1,7 +1,14 @@
+import sys
 from dataclasses import fields, is_dataclass
 from typing import Generic, Optional, Self, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    # Define 'Self' as a TypeVar for older versions
+    Self = TypeVar("Self", bound="ListCollection")
 
 T = TypeVar("T")
 
