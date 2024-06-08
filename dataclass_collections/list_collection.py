@@ -22,6 +22,7 @@ class ListCollection(list[T], Generic[T]):
                 self._check_consistent_types_for_dataclass_list(items)
             elif isinstance(self.underlying_type, BaseModel):
                 raise NotImplementedError("Pydantic models are not supported yet")
+                # TODO: Implement Pydantic 1.x and 2.x support
             else:
                 raise TypeError(
                     f"""The ListCollection must be of dataclasses or Pydantic models."""
