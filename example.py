@@ -34,6 +34,8 @@ except TypeError as e:
 dataclasses = [Dataclass(1, "a"), Dataclass(2, "b"), Dataclass(3, "c")]
 collection = DataclassCollection(dataclasses)
 
+# print(collection.__annotations__)
+
 element = collection[0]
 
 # Accessing properties
