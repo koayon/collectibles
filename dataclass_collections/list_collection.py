@@ -1,6 +1,6 @@
 import sys
 from dataclasses import fields, is_dataclass
-from typing import Generic, Optional, Self, Sequence, Type, TypeVar
+from typing import Generic, Optional, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
 
