@@ -28,3 +28,5 @@ element = collection[0]
 print(collection.val1)  # Output: [1, 2, 3]
 print(collection.val2)  # Output: ["a", "b", "c"]
 print(collection.val3)
+
+print(collection.__annotations__)
