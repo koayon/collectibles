@@ -1,9 +1,4 @@
-import abc
-import copy
-import inspect
-import keyword
-import sys
-from dataclasses import MISSING, Field, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from typing import Generic, Optional, Self, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
@@ -55,6 +50,23 @@ class ListCollection(list[T], Generic[T]):
                 property_type = list[field_type]
                 setattr(cls, name, self._make_property(name, field_type, property_type))
 
+            # Attempting to add custom properties and methods
+            potential_properties = [
+                prop
+                for prop in dir(self.underlying_type)
+                if isinstance(getattr(self.underlying_type, prop), property)
+                or callable(getattr(self.underlying_type, prop))
+            ]
+            for prop in potential_properties:
+                if not hasattr(self.__class__, prop):
+                    field_type = type(getattr(self.underlying_type, prop))
+                    property_type = list[field_type]
+                    setattr(
+                        cls,
+                        prop,
+                        self._make_dynamic_property(prop, field_type, property_type),
+                    )
+
             setattr(cls, "_ATTRS", [field.name for field in fields(dataclass_type)])
 
         elif isinstance(self.underlying_type, BaseModel):
@@ -64,7 +76,8 @@ class ListCollection(list[T], Generic[T]):
         else:
             raise TypeError(f"""The ListCollection must be of dataclasses""")
 
-    def _make_property(self, name: str, field_type: type, property_type: type) -> property:
+    @staticmethod
+    def _make_property(name: str, field_type: type, property_type: type) -> property:
         def prop(self) -> list[field_type]:
             # Intuitively [item.name for item in self]
             # But the following is a little nicer
@@ -73,6 +86,22 @@ class ListCollection(list[T], Generic[T]):
         prop.__name__ = name
         prop.__annotations__ = {"return": property_type}
         return property(prop)
+
+    @staticmethod
+    def _make_dynamic_property(name: str, field_type: type, property_type: type) -> property:
+        def dynamic_prop(self) -> list[field_type]:
+            return [
+                (
+                    getattr(item, name)()
+                    if callable(getattr(item, name))
+                    else getattr(item, name)
+                )
+                for item in self
+            ]
+
+        dynamic_prop.__name__ = name
+        dynamic_prop.__annotations__ = {"return": property_type}
+        return property(dynamic_prop)
 
     ### ENABLE TYPE-CHECKED LIST OPS ###
 
