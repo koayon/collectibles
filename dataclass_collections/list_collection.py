@@ -1,5 +1,6 @@
 import sys
 from dataclasses import fields, is_dataclass
+from enum import Enum
 from typing import Generic, Optional, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
@@ -11,6 +12,11 @@ else:
     Self = TypeVar("Self", bound="ListCollection")
 
 T = TypeVar("T")
+
+
+class ReduceFunc(Enum):
+    MEAN = "mean"
+    MEAN_WITHOUT_NONES = "mean_without_nones"
 
 
 class ListCollection(list[T], Generic[T]):
@@ -172,3 +178,43 @@ This collection is of type {self.underlying_type} and an object of type {type(va
                 f"""Both ListCollections must be of the same type to be added together.
 This collection is of type {self.underlying_type} and the other collection is of type {other.underlying_type}"""
             )
+
+    ### REDUCTIONS ###
+    def reduce(self, func: str = "mean") -> T:
+        if func == "mean":
+            reduce_callable = self.mean
+        elif func == "mean_without_nones":
+            reduce_callable = self.mean_without_nones
+        else:
+            raise ValueError(
+                f"""The function {func} is not supported.
+The supported functions are: {[f.value for f in ReduceFunc]}"""
+            )
+
+        cls = self.underlying_type
+        assert cls is not None, "Please provide a non-empty list to reduce."
+
+        reduced_dict = {
+            attr: reduce_callable([getattr(item, attr) for item in self])
+            for attr in getattr(self, "_ATTRS", [])
+        }
+
+        return cls(**reduced_dict)
+
+    @staticmethod
+    def mean_without_nones(values: list[T]) -> Optional[T]:
+        filtered_values = [value for value in values if value is not None]
+
+        if len(values) == 0:
+            return None
+
+        return sum(filtered_values) / len(filtered_values)  # type: ignore
+
+    @staticmethod
+    def mean(values: list[T]) -> T:
+        filtered_values = [value for value in values if value is not None]
+
+        if len(values) == 0:
+            raise ValueError("Cannot calculate mean of empty list")
+
+        return sum(filtered_values) / len(filtered_values)  # type: ignore
