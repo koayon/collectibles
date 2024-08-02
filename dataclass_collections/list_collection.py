@@ -205,7 +205,7 @@ The supported functions are: {[f.value for f in ReduceFunc]}"""
     def mean_without_nones(values: list[T]) -> Optional[T]:
         filtered_values = [value for value in values if value is not None]
 
-        if len(values) == 0:
+        if len(filtered_values) == 0:
             return None
 
         return sum(filtered_values) / len(filtered_values)  # type: ignore
@@ -214,7 +214,7 @@ The supported functions are: {[f.value for f in ReduceFunc]}"""
     def mean(values: list[T]) -> T:
         filtered_values = [value for value in values if value is not None]
 
-        if len(values) == 0:
+        if len(filtered_values) == 0:
             raise ValueError("Cannot calculate mean of empty list")
 
         return sum(filtered_values) / len(filtered_values)  # type: ignore
