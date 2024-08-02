@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytest
 
-from dataclass_collections import ListCollection
+from collectibles import ListCollection
 
 
 # Define test dataclasses
