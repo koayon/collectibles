@@ -1,18 +1,12 @@
 from dataclasses import dataclass
 
-from dataclass_collections import ListCollection
+from collectibles import ListCollection
 
 
 @dataclass
 class Dataclass:
     val1: int
     val2: str
-
-
-@dataclass
-class RogueDataclass:
-    val1: int
-    val2: int
 
 
 class DataclassCollection(ListCollection[Dataclass]):
@@ -25,16 +19,8 @@ class DataclassCollection(ListCollection[Dataclass]):
 
 
 # Usage
-dataclasses_with_rogue = [Dataclass(1, "a"), RogueDataclass(2, 3), Dataclass(3, "c")]
-try:
-    collection = DataclassCollection(dataclasses_with_rogue)
-except TypeError as e:
-    print(e)
-
 dataclasses = [Dataclass(1, "a"), Dataclass(2, "b"), Dataclass(3, "c")]
 collection = DataclassCollection(dataclasses)
-
-# print(collection.__annotations__)
 
 element = collection[0]
 
@@ -46,6 +32,25 @@ print(collection.val3)
 collection.append(Dataclass(4, "d"))
 print(collection.val1)  # Output: [1, 2, 3, 4]
 
+# Non-usage
+
+
+@dataclass
+class RogueDataclass:
+    val1: int
+    val2: int
+
+
+dataclasses_with_rogue = [Dataclass(1, "a"), RogueDataclass(2, 3), Dataclass(3, "c")]
+try:
+    collection = DataclassCollection(dataclasses_with_rogue)
+except TypeError as e:
+    print(e)
+
+# print(collection.__annotations__)
+
+# Other
+
 collection2 = DataclassCollection(dataclasses)
 
 new_collection = collection + collection2
@@ -54,8 +59,4 @@ print(new_collection)
 b = collection[1:3]
 print(b)
 
-# I'm not going to stop you slicing or multiplying etc. but in those cases the
-# types are definitely the same so no checks needed
-# The result will be a list[Dataclass] so just wrap it in your DataclassCollection class and be on your way
-print()
 print(collection * 2)
