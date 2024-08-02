@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dataclass_collections import ListCollection
+from collectibles import ListCollection
 
 
 # Define test dataclasses
