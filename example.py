@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from dataclass_collections import ListCollection
+from collectibles import ListCollection
 
 
 @dataclass
