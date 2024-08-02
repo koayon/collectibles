@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "dataclass-collections"
+name = "collectibles"
 version = "0.1.5"
 description = "A library to manage collections of dataclasses and pydantic models"
 authors = ["Kola Ayonrinde <koayon@gmail.com>"]
@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 packages = [
-    { include = "dataclass_collections" },
+    { include = "collectibles" },
 ]
 
 [tool.poetry.dependencies]
